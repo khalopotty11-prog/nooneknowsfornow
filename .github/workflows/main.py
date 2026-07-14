@@ -6,12 +6,6 @@ from PySide6.QtCore import Qt, QThread, Signal
 ICON_FILENAME = "UREEDXD.ico"
 CLIENT_EXE_NAME = "UREEDXD_Client.exe"
 
-# This function finds files hidden inside the PyInstaller .exe
-def get_resource_path(filename):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, filename)
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-
 try:
     from ctypes import windll
     windll.shcore.SetProcessDpiAwareness(1)
@@ -82,21 +76,24 @@ class SetupApp(QMainWindow):
         os.makedirs(os.path.join(path, "instance", "mods"), exist_ok=True)
         prog(10)
         
-        log("Extracting client files...")
-        # 1. Extract the Client .exe from inside this Setup .exe
-        client_src = get_resource_path(CLIENT_EXE_NAME)
+        log("Moving client files...")
+        # Look for the Client EXE right next to the Setup EXE
+        current_dir = os.path.dirname(sys.executable)
+        client_src = os.path.join(current_dir, CLIENT_EXE_NAME)
         client_dst = os.path.join(path, CLIENT_EXE_NAME)
+        
+        if not os.path.exists(client_src):
+            raise Exception(f"Missing {CLIENT_EXE_NAME}! Make sure you extracted the zip first.")
+            
         shutil.copy(client_src, client_dst)
         prog(60)
         
-        # 2. Extract the Icon
-        icon_src = get_resource_path(ICON_FILENAME)
+        icon_src = os.path.join(current_dir, ICON_FILENAME)
         icon_dst = os.path.join(path, ICON_FILENAME)
         if os.path.exists(icon_src): shutil.copy(icon_src, icon_dst)
         prog(80)
         
         log("Creating desktop shortcut...")
-        # 3. Create shortcut that points directly to the .exe
         vbs = f"""Set WshShell = CreateObject("WScript.Shell")
 oShellLink = WshShell.CreateShortcut("{os.path.join(os.path.expanduser('~'), 'Desktop', 'UREEDXDCLIENT.lnk')}")
 oShellLink.TargetPath = "{client_dst}"
@@ -112,7 +109,7 @@ oShellLink.Save"""
 
     def finished(self, ok):
         if ok: QMessageBox.information(self, "Done", "Installed! Double-click the desktop icon to play.")
-        else: QMessageBox.critical(self, "Error", "Failed to extract files.")
+        else: QMessageBox.critical(self, "Error", f"Failed: {self.status.text()}")
         self.close()
 
 if __name__ == "__main__":
