@@ -19,14 +19,16 @@ jobs:
         Expand-Archive -Path "upx.zip" -DestinationPath "upx_temp"
         Copy-Item "upx_temp\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
 
-    - name: Install PyInstaller
-      run: pip install pyinstaller
+    - name: Install ALL Dependencies
+      run: pip install pyinstaller pyside6 minecraft-launcher-lib requests
 
-    - name: Build the EXE
-      run: |
-        pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --add-data "UREEDXD.ico;." --upx-dir=. main.py
+    - name: Build Client EXE
+      run: pyinstaller --onefile --windowed --name "UREEDXD_Client" ureedxd_client.py
 
-    - name: Upload the EXE
+    - name: Build Setup EXE (with Client hidden inside)
+      run: pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --add-data "UREEDXD.ico;." --add-data "dist/UREEDXD_Client.exe;." --upx-dir=. main.py
+
+    - name: Upload the Final Setup
       uses: actions/upload-artifact@v4
       with:
         name: UREEDXD_Installer
