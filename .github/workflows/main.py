@@ -1,6 +1,6 @@
 # main.py
 import os, sys, shutil, subprocess
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit, QFileDialog, QMessageBox, QProgressBar
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QFileDialog, QMessageBox, QProgressBar
 from PySide6.QtCore import Qt, QThread, Signal
 
 ICON_FILENAME = "UREEDXD.ico"
