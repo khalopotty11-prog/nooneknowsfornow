@@ -4,14 +4,14 @@ on: [push]
 
 jobs:
   build:
-    runs-on: windows-latest  # This tells GitHub to use a real Windows PC!
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11' # Windows Python has Tkinter built-in perfectly!
+        python-version: '3.11'
 
     - name: Install UPX compressor
       run: |
@@ -19,12 +19,15 @@ jobs:
         Expand-Archive -Path "upx.zip" -DestinationPath "upx_temp"
         Copy-Item "upx_temp\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
 
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+
     - name: Build the EXE
       run: |
         pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --add-data "UREEDXD.ico;." --upx-dir=. main.py
 
     - name: Upload the EXE
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: UREEDXD_Installer
         path: dist\UREEDXD_Setup.exe
