@@ -1,11 +1,16 @@
 # main.py
-import os, sys, urllib.request
+import os, sys, shutil, subprocess
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit, QFileDialog, QMessageBox, QProgressBar
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QFont
 
-CLIENT_DOWNLOAD_URL = "https://raw.githubusercontent.com/khalopotty11-prog/nooneknowsfornow/main/ureedxd_client.py"
 ICON_FILENAME = "UREEDXD.ico"
+CLIENT_EXE_NAME = "UREEDXD_Client.exe"
+
+# This function finds files hidden inside the PyInstaller .exe
+def get_resource_path(filename):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
 try:
     from ctypes import windll
@@ -38,7 +43,6 @@ class SetupApp(QMainWindow):
         self.setWindowTitle("UREEDXDCLIENT Setup")
         self.setFixedSize(500, 300)
         self.setStyleSheet(STYLE)
-        self.icon_path = os.path.join(os.path.dirname(sys.executable), ICON_FILENAME)
 
         central = QWidget(); self.setCentralWidget(central)
         lay = QVBoxLayout(central); lay.setSpacing(15)
@@ -75,36 +79,40 @@ class SetupApp(QMainWindow):
         self.w.start()
 
     def do_install(self, path, log, prog):
-        os.makedirs(os.path.join(path, "instance", "mods"), exist_ok=True); prog(10)
-        log("Downloading client...")
-        urllib.request.urlretrieve(CLIENT_DOWNLOAD_URL, os.path.join(path, "ureedxd_client.py")); prog(60)
+        os.makedirs(os.path.join(path, "instance", "mods"), exist_ok=True)
+        prog(10)
         
-        bat = f"@echo off\nstart \"\" pythonw \"{os.path.join(path, 'ureedxd_client.py')}\"\nexit\n"
-        with open(os.path.join(path, "Play UREEDXDCLIENT.bat"), "w") as f: f.write(bat)
+        log("Extracting client files...")
+        # 1. Extract the Client .exe from inside this Setup .exe
+        client_src = get_resource_path(CLIENT_EXE_NAME)
+        client_dst = os.path.join(path, CLIENT_EXE_NAME)
+        shutil.copy(client_src, client_dst)
+        prog(60)
         
-        if os.path.exists(self.icon_path):
-            import shutil
-            shutil.copy(self.icon_path, os.path.join(path, ICON_FILENAME))
+        # 2. Extract the Icon
+        icon_src = get_resource_path(ICON_FILENAME)
+        icon_dst = os.path.join(path, ICON_FILENAME)
+        if os.path.exists(icon_src): shutil.copy(icon_src, icon_dst)
         prog(80)
-        log("Creating shortcut...")
         
-        # VBS Script for perfect Windows Shortcut
+        log("Creating desktop shortcut...")
+        # 3. Create shortcut that points directly to the .exe
         vbs = f"""Set WshShell = CreateObject("WScript.Shell")
 oShellLink = WshShell.CreateShortcut("{os.path.join(os.path.expanduser('~'), 'Desktop', 'UREEDXDCLIENT.lnk')}")
-oShellLink.TargetPath = "{os.path.join(path, 'Play UREEDXDCLIENT.bat')}"
+oShellLink.TargetPath = "{client_dst}"
 oShellLink.WorkingDirectory = "{path}"
-oShellLink.IconLocation = "{os.path.join(path, ICON_FILENAME)}"
+oShellLink.IconLocation = "{icon_dst}"
 oShellLink.Save"""
         vbs_path = os.path.join(path, "set.vbs")
         with open(vbs_path, "w") as f: f.write(vbs)
-        import subprocess; subprocess.run(['wscript.exe', vbs_path], shell=True)
+        subprocess.run(['wscript.exe', vbs_path], shell=True)
         try: os.remove(vbs_path)
         except: pass
         prog(100); log("Done!")
 
     def finished(self, ok):
-        if ok: QMessageBox.information(self, "Done", "Installed! Check your desktop.")
-        else: QMessageBox.critical(self, "Error", "Check your internet connection.")
+        if ok: QMessageBox.information(self, "Done", "Installed! Double-click the desktop icon to play.")
+        else: QMessageBox.critical(self, "Error", "Failed to extract files.")
         self.close()
 
 if __name__ == "__main__":
