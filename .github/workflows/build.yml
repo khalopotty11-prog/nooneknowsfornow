@@ -22,14 +22,17 @@ jobs:
     - name: Install ALL Dependencies
       run: pip install pyinstaller pyside6 minecraft-launcher-lib requests
 
-    - name: Build Client EXE
-      run: pyinstaller --onefile --windowed --name "UREEDXD_Client" ureedxd_client.py
+    - name: Build Client EXE (Slimmed Down)
+      run: pyinstaller --onefile --windowed --name "UREEDXD_Client" --exclude-module PySide6.QtWebEngine --exclude-module PySide6.QtWebEngineWidgets --exclude-module PySide6.QtWebChannel --exclude-module PySide6.QtMultimedia --exclude-module PySide6.Qt3DCore --exclude-module PySide6.Qt3DRender --exclude-module PySide6.QtBluetooth --exclude-module PySide6.QtNfc --exclude-module PySide6.QtPositioning --exclude-module PySide6.QtSensors ureedxd_client.py
 
-    - name: Build Setup EXE (with Client hidden inside)
-      run: pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --add-data "UREEDXD.ico;." --add-data "dist/UREEDXD_Client.exe;." --upx-dir=. main.py
+    - name: Build Setup EXE
+      run: pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --upx-dir=. main.py
 
-    - name: Upload the Final Setup
+    - name: Package into ZIP
+      run: Compress-Archive -Path "dist\UREEDXD_Setup.exe", "dist\UREEDXD_Client.exe", "UREEDXD.ico" -DestinationPath "UREEDXD_Installer.zip"
+
+    - name: Upload the Final ZIP
       uses: actions/upload-artifact@v4
       with:
         name: UREEDXD_Installer
-        path: dist\UREEDXD_Setup.exe
+        path: UREEDXD_Installer.zip
