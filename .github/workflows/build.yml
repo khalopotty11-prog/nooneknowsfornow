@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -27,7 +27,7 @@ jobs:
         pyinstaller --onefile --windowed --icon=UREEDXD.ico --name "UREEDXD_Setup" --add-data "UREEDXD.ico;." --upx-dir=. main.py
 
     - name: Upload the EXE
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: UREEDXD_Installer
         path: dist\UREEDXD_Setup.exe
